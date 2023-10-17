@@ -3,3 +3,7 @@ import numpy as np
 
 for i in range(1,20):
     print("hello")
+
+print(dir(pd))
+
+print(dir(np))
