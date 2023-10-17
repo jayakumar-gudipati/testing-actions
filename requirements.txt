@@ -3,3 +3,4 @@ numpy
 selenium
 bs4
 flask
+apache-airflow
