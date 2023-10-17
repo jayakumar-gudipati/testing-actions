@@ -49,3 +49,6 @@ def print_libs():
 print_libs()
 
 print("adadasdasdasdasdasdasda")
+
+
+print(su.run("echo $PATH"))
