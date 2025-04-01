@@ -182,17 +182,20 @@ rs_cte_2 = rs_cte_2c.withColumn(
 ).select("loan_id", "day_of_month").alias("frs_final")
 
 
-joins = today_updated_loans_df.alias("fl").join(fpro, today_updated_loans_df.product_id == fpro.id, "inner")\
+joins = today_updated_loans_df.alias("fl")\
+    .join(fpro, today_updated_loans_df.product_id == fpro.id, "inner")\
     .join(fda, fda.accountable_id == today_updated_loans_df.id, "left")\
     .join(fb, fb.id == today_updated_loans_df.borrower_id, "left")\
     .join(rs_cte_2, rs_cte_2.loan_id == today_updated_loans_df.id, "left")\
-    .join(snm, f.trim(snm.State_Derv) == f.when((fb.permanent_state.isNull() | f.trim(fb.permanent_state).isin(invalid_values) | (f.length(f.trim(fb.permanent_state)) < 2)),
-                                                f.when((fb.current_state.isNull() | f.trim(fb.current_state).isin(invalid_values) | (f.length(f.trim(fb.current_state)) < 2)),
-                                                       f.when((fb.current_city.isNull() | f.trim(fb.current_city).isin(invalid_values) | (f.length(f.trim(fb.current_city)) < 2)),
-                                                              f.trim(fb.permanent_city))
-                                                       .otherwise(f.trim(fb.current_city)))
-                                                .otherwise(f.trim(fb.current_state)))
-          .otherwise(f.trim(fb.permanent_state)), "left")\
+    .join(snm, f.trim(snm.State_Derv) == f.when(
+        (fb.permanent_state.isNull() | f.trim(fb.permanent_state).isin(
+            invalid_values) | (f.length(f.trim(fb.permanent_state)) < 2)),
+        f.when((fb.current_state.isNull() | f.trim(fb.current_state).isin(invalid_values) | (f.length(f.trim(fb.current_state)) < 2)),
+               f.when((fb.current_city.isNull() | f.trim(fb.current_city).isin(invalid_values) | (f.length(f.trim(fb.current_city)) < 2)),
+                      f.trim(fb.permanent_city))
+               .otherwise(f.trim(fb.current_city)))
+        .otherwise(f.trim(fb.current_state)))
+    .otherwise(f.trim(fb.permanent_state)), "left")\
     .select(
     f.row_number().over(window_spec).alias("S.No"),
     fpro.client_namespace_internal.alias("partner_name_short"),
