@@ -1,12 +1,9 @@
-# importing required libraries
-import pyspark
-from pyspark.sql import SQLContext, SparkSession
+from datetime import datetime, timedelta
+from pyspark.sql import SparkSession
 import pyspark.sql.functions as f
 from pyspark.sql.window import Window
-import boto3
-from datetime import datetime, timezone, timedelta
-from collections import defaultdict
-from pyspark.sql.types import IntegerType, StringType, DateType, DoubleType, DateType, StructType, StructField, TimestampType, BooleanType
+from pyspark.sql.types import IntegerType, StringType, DoubleType
+from pyspark.sql.types import StructType, StructField, TimestampType, BooleanType
 
 # creating spark session
 spark = SparkSession.builder \
@@ -93,7 +90,7 @@ previous_days_successful_schema = StructType([
 
 
 previous_days_successful = spark.read.schema(previous_days_successful_schema).parquet(
-    f"s3://snowbergsandbox/zeus_disb_format/successful_list_new/", InferSchema=True).alias("pds")
+    "s3://snowbergsandbox/zeus_disb_format/successful_list_new/", InferSchema=True).alias("pds")
 
 previous_day_unsuccessful = spark.read.parquet(
     "s3://snowbergsandbox/zeus_disb_format/unsuccessful_list/")
@@ -218,11 +215,11 @@ joins = today_updated_loans_df.alias("fl").join(fpro, today_updated_loans_df.pro
     f.lit("Vivriti Capital Limited").alias("Entity"),
     f.lit("PERSON").alias("Applicant Type"),
     fpro.name.alias("Asset Class"),
-    f.regexp_replace(fb.first_name, '[^a-zA-Z0-9]\s', '').alias("first_name"),
+    f.regexp_replace(fb.first_name, '[^a-zA-Z0-9] ', '').alias("first_name"),
     f.regexp_replace(
-        fb.middle_name, '[^a-zA-Z0-9]\s', '').alias("middle_name"),
+        fb.middle_name, '[^a-zA-Z0-9] ', '').alias("middle_name"),
     f.when(last_name_expr.isNotNull(), f.regexp_replace(
-        last_name_expr, "[^a-zA-Z0-9]\s", ""))
+        last_name_expr, "[^a-zA-Z0-9] ", ""))
     .otherwise(None).alias("last_name"),
     f.round(f.coalesce(f.col("fb.age"),
                        f.floor(f.datediff(f.col("fl.cdd_new"),
@@ -258,7 +255,7 @@ joins = today_updated_loans_df.alias("fl").join(fpro, today_updated_loans_df.pro
     f.regexp_replace(
         f.coalesce(
             f.when(f.length(f.trim(fb.permanent_city)) > 1, fb.permanent_city)
-            .when(f.length(f.trim(fb.current_city)) > 1, fb.current_city)), '[^a-zA-Z0-9]\s', '')
+            .when(f.length(f.trim(fb.current_city)) > 1, fb.current_city)), '[^a-zA-Z0-9] ', '')
     .alias("City"),
     f.when(~snm.State_Derv.isin(['zBlank', 'others']),
            f.when(snm.State.startswith("Jammu"), f.lit("Jammu and Kashmir"))
@@ -275,7 +272,7 @@ joins = today_updated_loans_df.alias("fl").join(fpro, today_updated_loans_df.pro
     f.date_format(today_updated_loans_df.cdd_new,
                   'dd-MM-yyyy').alias("Activation Date"),
     f.regexp_replace(f.coalesce(fda.account_name, f.concat(f.trim(fb.first_name), f.lit(" "), f.trim(
-        fb.middle_name), f.lit(" "), f.trim(fb.last_name))), '[^a-zA-Z0-9]\s', '').substr(1, 50).alias("Beneficiary Name"),
+        fb.middle_name), f.lit(" "), f.trim(fb.last_name))), '[^a-zA-Z0-9] ', '').substr(1, 50).alias("Beneficiary Name"),
     f.regexp_replace(fda.account_no, '[^a-zA-Z0-9]',
                      '').cast("string").alias("Beneficiary Account No"),
     f.when(fda.bank_account_type.isNotNull(), fda.bank_account_type)
